@@ -16,12 +16,16 @@ function Upload() {
         }
     }
 
-    const handleSeach = async (e) => {
+    const handleSearch = async (e) => {
         e.preventDefault(); //stop the default reaction
 
-                const formData = new FormData();
+        setProcessing(true);
+
+        const formData = new FormData();
         formData.append('file', file);
         formData.append('question', question);
+
+        console.log(file);
 
         try {
             const response = await fetch('/api/v1/search', {
@@ -37,6 +41,7 @@ function Upload() {
             setResults(data.response || '');
         } catch (error) {
             // Optionally handle error here
+            log.error(error);
         } finally {
             setProcessing(false); // Hide progress bar
         }
@@ -49,7 +54,7 @@ function Upload() {
                 <ControlGroup vertical={true}>
                     <FileInput text={file ? file.name : "Choose file..."} onChange={handleFileChange}/>
                     <InputGroup value={question} onChange={(e) => setQuestion(e.target.value)} type="text"/>
-                    <Button text="Search" onClick={handleSeach}/>
+                    <Button text="Search" onClick={handleSearch}/>
                     {processing && <ProgressBar />}
                 </ControlGroup>
             </SectionCard>

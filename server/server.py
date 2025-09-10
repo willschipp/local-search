@@ -15,8 +15,6 @@ async def invoke(prompt, pdf_path, model="gemma3:1b"):
     # Start Ollama client
     client = Client()
 
-    print(f" pdf path {pdf_path}")
-
     # Load PDF and extract text
     loader = PyPDFLoader(pdf_path)
     docs = loader.load()
@@ -41,42 +39,37 @@ async def invoke(prompt, pdf_path, model="gemma3:1b"):
 
 async def upload_video(request: web.Request) -> web.Response:
     reader = await request.multipart()
-    field = await reader.next()
-    if not field or field.name != 'file':
-        return web.Response(text='No file part', status=400)
 
-    filename = field.filename
-    if not filename:
-        return web.Response(text="No selected file", status=400)
+    file_field = None
+    question = None
 
-    prompt = ""
+    while True:
+        field = await reader.next()
+        if field is None:
+            break
+        if field.name == "file":
+            filename = secure_filename(field.filename)
+            suffix = os.path.splitext(filename)[1]
 
-    # get prompt
-    post_data = await request.post()
-    prompt = post_data.get("question", "")
-    if not prompt:
-        return web.Response(text="Parameter 'question' is required.", status=400)    
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+                size = 0
+                while True:
+                    chunk = await field.read_chunk()
+                    if not chunk:
+                        break
+                    temp_file.write(chunk)
+                    size += len(chunk)
+                temp_path = temp_file.name
+            file_field = temp_path
+        elif field.name == "question":
+            question = await field.text()
 
-    filename = secure_filename(filename)
-    suffix = os.path.splitext(filename)[1]
+    if not file_field:
+        return web.Response(text="No file uploaded", status=400)
+    if not question:
+        return web.Response(text="Parameter 'question' is required.", status=400)
 
-    print(f"file name {filename}")
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-        size = 0
-        while True:
-            chunk = await field.read_chunk()  # async chunk read
-            if not chunk:
-                break
-            temp_file.write(chunk)
-            size += len(chunk)
-        temp_path = temp_file.name
-    # save
-
-    print(f"temp path {temp_path}")
-
-    results = await invoke(prompt, temp_path)
-
+    results = await invoke(question, file_field)
     return web.json_response({'response': results})
 
 # UX server
