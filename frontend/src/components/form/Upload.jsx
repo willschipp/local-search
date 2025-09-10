@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ControlGroup, FileInput, InputGroup, Button, ProgressBar, Section, SectionCard } from "@blueprintjs/core";
 
-function Upload() {
+function Upload({resultsHandler}) {
 
     const [question,setQuestion] = useState('');
     const [file,setFile] = useState(null);
@@ -39,6 +39,9 @@ function Upload() {
 
             const data = await response.json();
             setResults(data.response || '');
+            if (resultsHandler) {
+                resultsHandler(data.response);
+            }
         } catch (error) {
             // Optionally handle error here
             log.error(error);
@@ -57,9 +60,6 @@ function Upload() {
                     <Button text="Search" onClick={handleSearch}/>
                     {processing && <ProgressBar />}
                 </ControlGroup>
-            </SectionCard>
-            <SectionCard>
-                {results && <>{results}</>}
             </SectionCard>
         </Section>
     );
