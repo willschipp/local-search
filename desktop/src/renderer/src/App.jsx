@@ -1,10 +1,12 @@
+import './assets/main.css'
+
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
-import './App.css'
 
 import Home from './components/pages/Home';
 import MenuBlock from './components/layout/MenuBlock';
 
 function App() {
+  const ipcHandle = () => window.electron.ipcRenderer.send('ping')
 
   return (
     <div className="bp6-dark">
